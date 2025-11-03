@@ -42,7 +42,7 @@ router.post("/", async (c) => {
 
   await db
     .updateTable("orders")
-    .set({ status: payload.status, updatedAt: Date.now() })
+    .set({ status: payload.status, updatedAt: Math.floor(Date.now() / 1000) })
     .where("id", "=", payload.orderId)
     .execute();
 
