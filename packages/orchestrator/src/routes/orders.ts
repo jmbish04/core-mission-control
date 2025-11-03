@@ -69,8 +69,8 @@ router.post("/", async (c) => {
     factory: order.factory,
     payload: JSON.parse(order.payload ?? "{}"),
     status: order.status,
-    createdAt: new Date(Number(order.createdAt ?? Date.now())).toISOString(),
-    updatedAt: new Date(Number(order.updatedAt ?? Date.now())).toISOString()
+    createdAt: new Date(order.createdAt ? Number(order.createdAt) * 1000 : Date.now()).toISOString(),
+    updatedAt: new Date(order.updatedAt ? Number(order.updatedAt) * 1000 : Date.now()).toISOString()
   });
 
   return jsonOk(c, response, 201);
