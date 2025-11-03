@@ -6,7 +6,7 @@ export const projects = sqliteTable("projects", {
   name: text("name"),
   repoUrl: text("repo_url"),
   status: text("status"),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`)
 });
 
 export const plans = sqliteTable("plans", {
