@@ -12,7 +12,7 @@ export const getBindings = (c: Context<OrchestratorEnv>) => c.env;
  */
 export const requireApiKey = (c: Context<OrchestratorEnv>): boolean => {
   const key = c.req.header("Authorization")?.replace("Bearer ", "");
-  if (!key || key !== c.env.WORKER_API_KEY) {
+  if (!key || !c.env.WORKER_API_KEY || !timingSafeEqual(key, c.env.WORKER_API_KEY)) {
     return false;
   }
   return true;
