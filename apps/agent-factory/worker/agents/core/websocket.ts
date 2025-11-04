@@ -245,7 +245,7 @@ export function sendToConnection<T extends WebSocketMessageType>(
         const message: WebSocketMessage = { type, ...data } as WebSocketMessage;
         connection.send(JSON.stringify(message));
     } catch (error) {
-        console.error(`Error sending message to connection ${connection.url}:`, error);
+        logger.error(`Error sending message to connection ${connection.url}:`, error);
     }
 }
 
