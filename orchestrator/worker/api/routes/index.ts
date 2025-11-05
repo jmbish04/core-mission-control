@@ -11,8 +11,9 @@ import { setupCodegenRoutes } from './codegenRoutes';
 import { setupScreenshotRoutes } from './imagesRoutes';
 import { setupSentryRoutes } from './sentryRoutes';
 import { Hono } from "hono";
-import { AppEnv } from "../../types/appenv";
+import { AppEnv } from "../../../packages/shared-types/src/api-types";
 import { setupStatusRoutes } from './statusRoutes';
+import { opsRoutes } from './opsRoutes';
 
 export function setupRoutes(app: Hono<AppEnv>): void {
     // Health check route
@@ -25,6 +26,9 @@ export function setupRoutes(app: Hono<AppEnv>): void {
 
     // Platform status routes (public)
     setupStatusRoutes(app);
+    
+    // Ops Specialist routes
+    app.route('/ops', opsRoutes);
 
     // Authentication and user management routes
     setupAuthRoutes(app);
