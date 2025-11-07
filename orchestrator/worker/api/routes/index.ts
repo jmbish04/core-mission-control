@@ -24,6 +24,7 @@ import { templateRoutes } from './templateRoutes';
 import { hilRoutes } from './hilRoutes';
 import { aiProviderRoutes } from './aiProviderRoutes';
 import { orderRoutes } from './orderRoutes';
+import { containerMonitoringRoutes } from './containerMonitoringRoutes';
 
 export function setupRoutes(app: Hono<AppEnv>): void {
     // Health check route
@@ -103,4 +104,7 @@ export function setupRoutes(app: Hono<AppEnv>): void {
 
     // Screenshot serving routes (public)
     setupScreenshotRoutes(app);
+
+    // Container monitoring routes
+    app.route('/api/monitoring', containerMonitoringRoutes);
 }

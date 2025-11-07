@@ -321,3 +321,102 @@ export type NewAIProviderConversation = typeof aiProviderConversations.$inferIns
 export type HilRequest = typeof hilRequests.$inferSelect;
 export type NewHilRequest = typeof hilRequests.$inferInsert;
 
+// ========================================
+// CONTAINER MONITORING TABLES
+// ========================================
+
+/**
+ * Container Errors table - Stores errors from container processes
+ * All errors are routed through orchestrator RPC, not stored locally in containers
+ */
+export const containerErrors = sqliteTable('container_errors', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    workerName: text('worker_name').notNull(), // REQUIRED: Worker identifier
+    containerName: text('container_name'), // Optional: Container identifier
+    instanceId: text('instance_id').notNull(), // Process instance ID
+    processId: text('process_id').notNull(), // Process PID
+    errorHash: text('error_hash').notNull(), // Hash for deduplication
+    timestamp: text('timestamp').notNull(), // ISO timestamp
+    level: integer('level').notNull(), // Pino log level (50=error, 60=fatal)
+    message: text('message').notNull(), // Error message
+    rawOutput: text('raw_output').notNull(), // Complete raw JSON log line
+    occurrenceCount: integer('occurrence_count').default(1), // Number of times this error occurred
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+    workerContainerIdx: index('container_errors_worker_container_idx').on(table.workerName, table.containerName),
+    instanceIdIdx: index('container_errors_instance_id_idx').on(table.instanceId),
+    processIdIdx: index('container_errors_process_id_idx').on(table.processId),
+    errorHashIdx: index('container_errors_error_hash_idx').on(table.errorHash),
+    createdAtIdx: index('container_errors_created_at_idx').on(table.createdAt),
+}));
+
+/**
+ * Container Logs table - Stores logs from container processes
+ * All logs are routed through orchestrator RPC, not stored locally in containers
+ */
+export const containerLogs = sqliteTable('container_logs', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    workerName: text('worker_name').notNull(), // REQUIRED: Worker identifier
+    containerName: text('container_name'), // Optional: Container identifier
+    instanceId: text('instance_id').notNull(), // Process instance ID
+    processId: text('process_id').notNull(), // Process PID
+    sequence: integer('sequence').notNull(), // Sequence number for ordering
+    timestamp: text('timestamp').notNull(), // ISO timestamp
+    level: text('level').notNull(), // 'debug', 'info', 'warn', 'error', 'output'
+    message: text('message').notNull(), // Log message
+    stream: text('stream').notNull(), // 'stdout' or 'stderr'
+    source: text('source'), // Optional source identifier
+    metadata: text('metadata', { mode: 'json' }), // Optional JSON metadata
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+    workerContainerIdx: index('container_logs_worker_container_idx').on(table.workerName, table.containerName),
+    instanceIdIdx: index('container_logs_instance_id_idx').on(table.instanceId),
+    processIdIdx: index('container_logs_process_id_idx').on(table.processId),
+    timestampIdx: index('container_logs_timestamp_idx').on(table.timestamp),
+    createdAtIdx: index('container_logs_created_at_idx').on(table.createdAt),
+    instanceSequenceIdx: index('container_logs_instance_sequence_idx').on(table.instanceId, table.sequence),
+}));
+
+/**
+ * Container Processes table - Tracks container process lifecycle
+ * All process state is routed through orchestrator RPC, not stored locally in containers
+ */
+export const containerProcesses = sqliteTable('container_processes', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    workerName: text('worker_name').notNull(), // REQUIRED: Worker identifier
+    containerName: text('container_name'), // Optional: Container identifier
+    instanceId: text('instance_id').notNull().unique(), // Process instance ID (unique)
+    processId: text('process_id'), // Process PID (may be null if not started)
+    command: text('command').notNull(), // Command being executed
+    args: text('args', { mode: 'json' }), // Command arguments as JSON array
+    cwd: text('cwd').notNull(), // Working directory
+    status: text('status').notNull().default('starting'), // 'starting', 'running', 'stopping', 'stopped', 'crashed', 'restarting'
+    restartCount: integer('restart_count').default(0), // Number of restarts
+    startTime: integer('start_time', { mode: 'timestamp' }), // Process start time
+    endTime: integer('end_time', { mode: 'timestamp' }), // Process end time
+    exitCode: integer('exit_code'), // Process exit code
+    lastError: text('last_error'), // Last error message if crashed
+    env: text('env', { mode: 'json' }), // Environment variables as JSON object
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+    workerContainerIdx: index('container_processes_worker_container_idx').on(table.workerName, table.containerName),
+    instanceIdIdx: index('container_processes_instance_id_idx').on(table.instanceId),
+    statusIdx: index('container_processes_status_idx').on(table.status),
+    createdAtIdx: index('container_processes_created_at_idx').on(table.createdAt),
+    updatedAtIdx: index('container_processes_updated_at_idx').on(table.updatedAt),
+}));
+
+// ========================================
+// CONTAINER MONITORING TYPE EXPORTS
+// ========================================
+
+export type ContainerError = typeof containerErrors.$inferSelect;
+export type NewContainerError = typeof containerErrors.$inferInsert;
+
+export type ContainerLog = typeof containerLogs.$inferSelect;
+export type NewContainerLog = typeof containerLogs.$inferInsert;
+
+export type ContainerProcess = typeof containerProcesses.$inferSelect;
+export type NewContainerProcess = typeof containerProcesses.$inferInsert;
+

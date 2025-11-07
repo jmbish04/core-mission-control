@@ -97,6 +97,11 @@
       "binding": "ORCHESTRATOR_DOCS",
       "service": "vibehq-orchestrator",
       "entrypoint": "DocsOps"
+    },
+    {
+      "binding": "ORCHESTRATOR_CONTAINER_MONITORING",
+      "service": "vibehq-orchestrator",
+      "entrypoint": "ContainerMonitoringOps"
     }
   ],
   
