@@ -88,6 +88,42 @@ export interface HealthCheckHistoryResponse {
   limit: number
 }
 
+export interface RecordWorkerTestResultParams {
+  worker_name: string;
+  worker_type: string;
+  run_id: string;
+  status: 'passed' | 'failed';
+  trigger: 'cron' | 'on_demand' | 'package';
+  suite: string;
+  requested_by?: string | null;
+  metrics: {
+    total: number;
+    passed: number;
+    failed: number;
+    startedAt: string;
+    completedAt: string;
+    durationMs: number;
+  };
+  report: {
+    previewUrl: string;
+    viewport: string;
+    artifacts: string[];
+  };
+  raw_results?: Record<string, unknown>;
+}
+
+export interface LatestWorkerTestResponse {
+  worker_check_uuid: string;
+  worker_name: string;
+  status: string;
+  overall_status: string | null;
+  health_score: number | null;
+  metrics: Record<string, unknown>;
+  report: Record<string, unknown>;
+  raw_results: Record<string, unknown> | null;
+  completed_at: string | null;
+}
+
 export class Health extends BaseWorkerEntrypoint<CoreEnv> {
   
   // Worker configuration - these would be loaded from config or environment
@@ -596,5 +632,113 @@ Provide an overall system health analysis and prioritized recommendations for th
         recommendations: 'Manual system review recommended'
       }
     }
+  }
+
+  async recordWorkerTestResult(params: RecordWorkerTestResultParams): Promise<{ health_check_uuid: string; worker_check_uuid: string }> {
+    const healthCheckUuid = crypto.randomUUID();
+    const workerCheckUuid = crypto.randomUUID();
+
+    await this.dbHealth
+      .insertInto('health_checks')
+      .values({
+        health_check_uuid: healthCheckUuid,
+        trigger_type: params.trigger,
+        trigger_source: params.requested_by || null,
+        status: params.status === 'passed' ? 'completed' : 'failed',
+        total_workers: 1,
+        completed_workers: 1,
+        passed_workers: params.status === 'passed' ? 1 : 0,
+        failed_workers: params.status === 'failed' ? 1 : 0,
+        overall_health_score: params.status === 'passed' ? 1 : 0
+      })
+      .execute();
+
+    await this.dbHealth
+      .insertInto('worker_health_checks')
+      .values({
+        worker_check_uuid: workerCheckUuid,
+        health_check_uuid: healthCheckUuid,
+        worker_name: params.worker_name,
+        worker_type: params.worker_type,
+        status: params.status,
+        overall_status: params.status === 'passed' ? 'healthy' : 'unhealthy',
+        health_score: params.status === 'passed' ? 1 : 0,
+        unit_tests_total: params.metrics.total,
+        unit_tests_passed: params.metrics.passed,
+        unit_tests_failed: params.metrics.failed,
+        unit_test_results: JSON.stringify([{
+          name: params.suite,
+          status: params.status,
+          duration_ms: params.metrics.durationMs
+        }]),
+        raw_results: JSON.stringify({
+          suite: params.suite,
+          report: params.report,
+          metrics: params.metrics,
+          raw: params.raw_results ?? null
+        }),
+        warnings: params.status === 'failed' ? JSON.stringify(['investigate failing run']) : null,
+        completed_at: params.metrics.completedAt,
+        started_at: params.metrics.startedAt,
+        requested_at: params.metrics.startedAt,
+        response_time_ms: params.metrics.durationMs,
+        orchestrator_connectivity: true
+      })
+      .execute();
+
+    await this.db
+      .insertInto('operation_logs')
+      .values({
+        source: 'orchestrator.health_check',
+        operation: 'unit_test_run_recorded',
+        level: params.status === 'passed' ? 'info' : 'error',
+        details: JSON.stringify({
+          worker: params.worker_name,
+          suite: params.suite,
+          run_id: params.run_id,
+          status: params.status
+        }),
+        order_id: null,
+        task_uuid: params.run_id
+      })
+      .execute();
+
+    return { health_check_uuid: healthCheckUuid, worker_check_uuid: workerCheckUuid };
+  }
+
+  async getLatestWorkerTest(workerName: string): Promise<LatestWorkerTestResponse | null> {
+    const record = await this.dbHealth
+      .selectFrom('worker_health_checks')
+      .selectAll()
+      .where('worker_name', '=', workerName)
+      .orderBy('completed_at', 'desc')
+      .limit(1)
+      .executeTakeFirst();
+
+    if (!record) {
+      return null;
+    }
+
+    const raw = record.raw_results ? JSON.parse(record.raw_results) : null;
+
+    return {
+      worker_check_uuid: record.worker_check_uuid,
+      worker_name: record.worker_name,
+      status: record.status ?? 'unknown',
+      overall_status: record.overall_status ?? null,
+      health_score: record.health_score ?? null,
+      metrics: raw?.metrics ?? {
+        total: record.unit_tests_total ?? 0,
+        passed: record.unit_tests_passed ?? 0,
+        failed: record.unit_tests_failed ?? 0,
+        response_time_ms: record.response_time_ms ?? 0,
+      },
+      report: raw?.report ?? {
+        artifacts: [],
+        unit_test_results: record.unit_test_results ? JSON.parse(record.unit_test_results) : [],
+      },
+      raw_results: raw,
+      completed_at: record.completed_at ?? null
+    };
   }
 }

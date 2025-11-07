@@ -24,5 +24,8 @@ export interface Env extends Cloudflare.Env, Omit<CoreEnv, 'DB_OPS' | 'DB_PROJEC
   // Additional orchestrator-specific bindings
   CONFLICT_SPECIALIST?: Fetcher
   DELIVERY_REPORT_SPECIALIST?: Fetcher
+  UNIT_TEST_SPECIALIST?: Fetcher
+  RETROFIT_SPECIALIST?: Fetcher
+  CLOUDFLARE_EXPERT?: Fetcher
 }
 

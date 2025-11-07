@@ -62,6 +62,41 @@
       "binding": "ORCHESTRATOR_HEALTH_CHECK",
       "service": "vibehq-orchestrator",
       "entrypoint": "Health"
+    },
+    {
+      "binding": "ORCHESTRATOR_TEMPLATE",
+      "service": "vibehq-orchestrator",
+      "entrypoint": "TemplateOps"
+    },
+    {
+      "binding": "ORCHESTRATOR_HIL",
+      "service": "vibehq-orchestrator",
+      "entrypoint": "HilOps"
+    },
+    {
+      "binding": "ORCHESTRATOR_DATA",
+      "service": "vibehq-orchestrator",
+      "entrypoint": "DataOps"
+    },
+    {
+      "binding": "ORCHESTRATOR_PROJECTS",
+      "service": "vibehq-orchestrator",
+      "entrypoint": "ProjectsOps"
+    },
+    {
+      "binding": "ORCHESTRATOR_CHATS",
+      "service": "vibehq-orchestrator",
+      "entrypoint": "ChatsOps"
+    },
+    {
+      "binding": "ORCHESTRATOR_HEALTH",
+      "service": "vibehq-orchestrator",
+      "entrypoint": "HealthOps"
+    },
+    {
+      "binding": "ORCHESTRATOR_DOCS",
+      "service": "vibehq-orchestrator",
+      "entrypoint": "DocsOps"
     }
   ],
   

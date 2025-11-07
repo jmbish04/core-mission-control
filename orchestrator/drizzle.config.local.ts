@@ -13,6 +13,7 @@ export default defineConfig({
 
   // Schema files for all databases
   schema: [
+    './worker/database/schema.ts',
     './worker/database/ops/schema.ts',
     './worker/database/projects/schema.ts',
     './worker/database/chat/schema.ts',

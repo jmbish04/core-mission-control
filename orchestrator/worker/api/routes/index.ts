@@ -11,13 +11,19 @@ import { setupCodegenRoutes } from './codegenRoutes';
 import { setupScreenshotRoutes } from './imagesRoutes';
 import { setupSentryRoutes } from './sentryRoutes';
 import { Hono } from "hono";
-import { AppEnv } from "../../../packages/shared-types/src/api-types";
+import { AppEnv } from "../../types/appenv";
 import { setupStatusRoutes } from './statusRoutes';
+import { healthTestRoutes } from './healthTestRoutes';
+import { specialistLogRoutes } from './specialistLogRoutes';
 import { opsRoutes } from './opsRoutes';
 import { agentRoutes } from './agentRoutes';
 import { factoryRoutes } from './factoryRoutes';
 import { dockerfileAgentApi } from '../../agents/dockerfileSpecialist';
 import { coordsApi } from './coordRoutes';
+import { templateRoutes } from './templateRoutes';
+import { hilRoutes } from './hilRoutes';
+import { aiProviderRoutes } from './aiProviderRoutes';
+import { orderRoutes } from './orderRoutes';
 
 export function setupRoutes(app: Hono<AppEnv>): void {
     // Health check route
@@ -31,6 +37,12 @@ export function setupRoutes(app: Hono<AppEnv>): void {
     // Platform status routes (public)
     setupStatusRoutes(app);
     
+    // Health test telemetry
+    app.route('/api/health/tests', healthTestRoutes);
+
+    // Specialist logging routes
+    app.route('/api/specialists', specialistLogRoutes);
+    
     // Ops Specialist routes
     app.route('/ops', opsRoutes);
     
@@ -39,6 +51,18 @@ export function setupRoutes(app: Hono<AppEnv>): void {
 
     // Factory management routes
     app.route('/api/factories', factoryRoutes);
+
+    // Template management routes
+    app.route('/api/templates', templateRoutes);
+
+    // Order management routes
+    app.route('/api/orders', orderRoutes);
+
+    // Human-in-the-Loop (HIL) routes
+    app.route('/api/hil', hilRoutes);
+
+    // AI Provider clarification routes
+    app.route('/api/ai-provider', aiProviderRoutes);
 
     // Dockerfile specialist routes
     app.route('/api/dockerfile', dockerfileAgentApi);

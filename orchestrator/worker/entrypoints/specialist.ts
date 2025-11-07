@@ -277,4 +277,89 @@ export class Specialist extends BaseWorkerEntrypoint<CoreEnv> {
       .orderBy('created_at', 'desc')
       .execute()
   }
+
+  async logSpecialistActivity(params: {
+    specialist: string
+    activity: string
+    identifier?: string
+    level?: 'info' | 'warn' | 'error' | 'debug'
+    orderId?: string | null
+    taskUuid?: string | null
+    details?: Record<string, unknown>
+  }): Promise<void> {
+    const detailsPayload = {
+      identifier: params.identifier ?? null,
+      ...(params.details ?? {}),
+    }
+
+    await this.db
+      .insertInto('operation_logs')
+      .values({
+        source: `specialist.${params.specialist}`,
+        operation: params.activity,
+        level: params.level ?? 'info',
+        order_id: params.orderId ?? null,
+        task_uuid: params.taskUuid ?? null,
+        details: JSON.stringify(detailsPayload),
+      })
+      .execute()
+  }
+
+  async getSpecialistActivity(params: {
+    specialist: string
+    identifier?: string
+    limit?: number
+  }): Promise<Array<{
+    timestamp: string
+    activity: string
+    level: string
+    details: Record<string, unknown>
+  }>> {
+    const limit = params.limit ?? 25
+
+    const rows = await this.db
+      .selectFrom('operation_logs')
+      .select(['operation_logs.operation as activity', 'operation_logs.level as level', 'operation_logs.details as details', 'operation_logs.created_at as createdAt'])
+      .where('operation_logs.source', '=', `specialist.${params.specialist}`)
+      .orderBy('operation_logs.created_at', 'desc')
+      .limit(limit)
+      .execute()
+
+    return rows
+      .map((row) => {
+        let parsed: Record<string, unknown> = {}
+        if (row.details) {
+          try {
+            parsed = JSON.parse(row.details as unknown as string) as Record<string, unknown>
+          } catch (error) {
+            parsed = { raw: row.details }
+          }
+        }
+
+        if (params.identifier && parsed.identifier !== params.identifier) {
+          return null
+        }
+
+        const createdAt = (row as Record<string, unknown>).createdAt;
+        let timestamp: string;
+        if (typeof createdAt === 'number') {
+          timestamp = new Date(createdAt).toISOString();
+        } else if (typeof createdAt === 'string') {
+          timestamp = new Date(createdAt).toISOString();
+        } else {
+          timestamp = new Date().toISOString();
+        }
+
+        const activity = (row as Record<string, unknown>).activity
+        const level = (row as Record<string, unknown>).level
+
+        return {
+          timestamp,
+          activity: typeof activity === 'string' && activity.length > 0 ? activity : 'unknown',
+          level: typeof level === 'string' && level.length > 0 ? level : 'info',
+          details: parsed,
+        }
+      })
+      .filter((entry): entry is { timestamp: string; activity: string; level: string; details: Record<string, unknown> } => entry !== null)
+  }
 }

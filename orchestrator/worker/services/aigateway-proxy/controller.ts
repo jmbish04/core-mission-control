@@ -1,7 +1,7 @@
-import { getConfigurationForModel } from '../../../packages/shared-types/worker/agents/constants';
+import { getConfigurationForModel } from '../../agents/inferutils/core';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
-import { apps } from '../../../apps/data-factory/worker/database/schema';
+import { apps } from '../../database/schema';
 import { jwtVerify, SignJWT } from 'jose';
 import { isDev } from 'worker/utils/envs';
 import { RateLimitService } from '../rate-limit/rateLimits';

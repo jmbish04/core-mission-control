@@ -1,6 +1,7 @@
 {
   "models": {},
   "global": {
+    "defaultProvider": "codexCli",  
     "logLevel": "info",
     "debug": true,
     "defaultNumTasks": 10,
@@ -18,8 +19,8 @@
     "model": "gpt-5-codex",
     "allowNpx": true,
     "skipGitRepoCheck": true,
-    "approvalMode": "full-auto",
-    "sandboxMode": "workspace-write",
+    "approvalMode": "untrusted",
+    "sandboxMode": "danger-full-access",
     "verbose": true
   },
   "grokCli": {

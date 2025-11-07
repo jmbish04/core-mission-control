@@ -22,10 +22,15 @@
     "db:migrate:remote": "cd orchestrator && npm run db:migrate:remote",
     "db:generate": "cd orchestrator && npm run db:generate",
     "update:wrangler": "bash scripts/update-wrangler.sh",
-    "create-worker": "tsx scripts/create-worker.ts"
+    "create-worker": "tsx scripts/create-worker.ts",
+    "smoke:ai-provider": "node scripts/smoke/codex_taskmaster_unit_test_ai_provider_from_taskmaster.cjs",
+    "test:taskmaster": "node --experimental-vm-modules ./node_modules/.bin/jest --config jest.config.mjs tests/unit/ai-providers/codex-cli.test.js"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251014.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@jest/globals": "^30.2.0"
   }
 }
